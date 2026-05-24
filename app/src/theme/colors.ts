@@ -1,0 +1,18 @@
+export const Colors = {
+  bg: "#FFFAF6",
+  bgHeader: "#FFF8F0",
+  bgBubbleOther: "#FFF0E5",
+  bgBubbleSelf: "#FFD4B8",
+  bgInput: "#FFF8F0",
+  bgCard: "#FFF8F0",
+  text: "#4A3728",
+  textSecondary: "#A08070",
+  textMuted: "#C0A090",
+  accent: "#E8A87C",
+  accentLight: "#F5C9A0",
+  accentDark: "#C88D6A",
+  border: "#F0E0D0",
+  borderLight: "#F0D8C0",
+  white: "#FFFFFF",
+  danger: "#D4956A",
+};
