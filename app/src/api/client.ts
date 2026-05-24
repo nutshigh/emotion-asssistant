@@ -8,41 +8,94 @@ const DEV_URL = Platform.select({
 
 const BASE_URL = __DEV__ ? DEV_URL : "https://emotion-asssistant-production.up.railway.app/api";
 
-export async function* streamChat(request: ChatRequest): AsyncGenerator<ChatSSEEvent> {
-  const response = await fetch(`${BASE_URL}/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
-
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({ error: "请求失败" }));
-    throw new Error(err.error || "请求失败");
-  }
-
-  const reader = response.body?.getReader();
-  if (!reader) throw new Error("No response body");
-
-  const decoder = new TextDecoder();
+export function streamChat(request: ChatRequest): {
+  [Symbol.asyncIterator](): AsyncIterator<ChatSSEEvent>;
+} {
+  let lastIndex = 0;
   let buffer = "";
+  let done = false;
+  let resolveNext: ((value: IteratorResult<ChatSSEEvent>) => void) | null = null;
+  const pending: ChatSSEEvent[] = [];
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
+  function parseEvents(): void {
     const lines = buffer.split("\n");
     buffer = lines.pop() || "";
 
     for (const line of lines) {
       if (line.startsWith("data: ")) {
-        const json = line.slice(6);
         try {
-          yield JSON.parse(json) as ChatSSEEvent;
-        } catch { /* skip malformed lines */ }
+          const event = JSON.parse(line.slice(6)) as ChatSSEEvent;
+          if (resolveNext) {
+            resolveNext({ value: event, done: false });
+            resolveNext = null;
+          } else {
+            pending.push(event);
+          }
+          if (event.type === "done") {
+            done = true;
+          }
+        } catch { /* skip malformed */ }
       }
     }
   }
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", `${BASE_URL}/chat`);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.send(JSON.stringify(request));
+
+  xhr.onprogress = () => {
+    const newData = xhr.responseText.slice(lastIndex);
+    lastIndex = xhr.responseText.length;
+    buffer += newData;
+    parseEvents();
+  };
+
+  xhr.onerror = () => {
+    done = true;
+    const errorEvent: ChatSSEEvent = { type: "done" };
+    if (resolveNext) {
+      resolveNext({ value: errorEvent, done: false });
+      resolveNext = null;
+    }
+    // Resolve any pending next() call
+    if (resolveNext) {
+      resolveNext({ value: errorEvent, done: false });
+      resolveNext = null;
+    }
+  };
+
+  xhr.onloadend = () => {
+    done = true;
+    // flush remaining
+    const remaining = xhr.responseText.slice(lastIndex);
+    if (remaining) {
+      buffer += remaining;
+      parseEvents();
+    }
+    if (resolveNext) {
+      resolveNext({ value: undefined as any, done: true });
+      resolveNext = null;
+    }
+  };
+
+  return {
+    [Symbol.asyncIterator](): AsyncIterator<ChatSSEEvent> {
+      return {
+        async next(): Promise<IteratorResult<ChatSSEEvent>> {
+          if (pending.length > 0) {
+            return { value: pending.shift()!, done: false };
+          }
+          if (done) {
+            return { value: undefined as any, done: true };
+          }
+          return new Promise((resolve) => {
+            resolveNext = resolve;
+          });
+        },
+      };
+    },
+  };
 }
 
 export async function summarizeConversation(request: SummarizeRequest): Promise<SummarizeResponse> {
