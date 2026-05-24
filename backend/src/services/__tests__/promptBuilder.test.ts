@@ -28,5 +28,9 @@ describe("buildSystemPrompt", () => {
   it("handles empty profile gracefully", () => {
     const prompt = buildSystemPrompt(DEFAULT_PROFILE, "");
     expect(prompt.length).toBeGreaterThan(0);
+    expect(prompt).not.toContain("undefined");
+    expect(prompt).not.toContain("null");
+    // Should still include the base personality even with empty profile fields
+    expect(prompt).toContain("SoulMate");
   });
 });
