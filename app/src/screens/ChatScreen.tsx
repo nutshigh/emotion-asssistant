@@ -99,9 +99,6 @@ export function ChatScreen() {
       <TouchableOpacity style={drawerStyles.backdrop} onPress={() => setDrawerOpen(false)} activeOpacity={1} />
       <View style={drawerStyles.panel}>
         <Text style={drawerStyles.title}>会话列表</Text>
-        <TouchableOpacity style={drawerStyles.newBtn} onPress={handleNewSession}>
-          <Text style={drawerStyles.newBtnText}>+ 新对话</Text>
-        </TouchableOpacity>
 
         <ScrollView style={{ flex: 1 }}>
           {sessions.map((s) => (
@@ -121,6 +118,10 @@ export function ChatScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+
+        <TouchableOpacity style={drawerStyles.newBtn} onPress={handleNewSession}>
+          <Text style={drawerStyles.newBtnText}>+ 开启新对话</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -168,6 +169,11 @@ export function ChatScreen() {
 
       <ChatInput onSend={handleSend} disabled={isSending} />
 
+      {/* Floating new-conversation button */}
+      <TouchableOpacity style={styles.fab} onPress={handleNewSession} activeOpacity={0.8}>
+        <Text style={styles.fabText}>+</Text>
+      </TouchableOpacity>
+
       {/* Drawer Modal */}
       <Modal visible={drawerOpen} animationType="none" transparent onRequestClose={() => setDrawerOpen(false)}>
         {DrawerContent}
@@ -191,9 +197,9 @@ const drawerStyles = StyleSheet.create({
   newBtn: {
     backgroundColor: Colors.accent,
     borderRadius: 10,
-    padding: 12,
+    padding: 14,
     alignItems: "center",
-    marginBottom: 12,
+    marginTop: 8,
   },
   newBtnText: { color: Colors.white, fontWeight: "600", fontSize: 15 },
   item: {
@@ -244,4 +250,21 @@ const styles = StyleSheet.create({
   },
   errorText: { color: Colors.accentDark, fontSize: 13, flex: 1 },
   errorDismiss: { color: Colors.textMuted, fontSize: 16, paddingLeft: 12 },
+  fab: {
+    position: "absolute",
+    bottom: 70,
+    right: 16,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.accent,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  fabText: { fontSize: 24, color: Colors.white, marginTop: -1 },
 });
