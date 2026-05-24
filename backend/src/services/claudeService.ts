@@ -44,10 +44,13 @@ export async function summarizeConversation(request: SummarizeRequest): Promise<
     }],
   });
 
-  const text = (msg.content[0] as { text: string }).text;
+  const block = msg.content[0];
+  if (block.type !== "text") {
+    return { conversation_summary: "", profile_updates: {}, new_facts: [] };
+  }
   try {
-    return JSON.parse(text);
+    return JSON.parse(block.text);
   } catch {
-    return { conversation_summary: text.slice(0, 200), profile_updates: {}, new_facts: [] };
+    return { conversation_summary: block.text.slice(0, 200), profile_updates: {}, new_facts: [] };
   }
 }
