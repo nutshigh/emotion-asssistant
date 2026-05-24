@@ -139,6 +139,29 @@ export function ChatScreen() {
         <View style={styles.menuBtn} />
       </View>
 
+      {/* Session quick-switch bar */}
+      <View style={styles.sessionBar}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sessionBarInner}>
+          {sessions.map((s) => (
+            <TouchableOpacity
+              key={s.id}
+              style={[styles.sessionPill, s.id === currentSessionId && styles.sessionPillActive]}
+              onPress={() => handleSwitchSession(s)}
+            >
+              <Text
+                style={[styles.sessionPillText, s.id === currentSessionId && styles.sessionPillTextActive]}
+                numberOfLines={1}
+              >
+                {s.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity style={styles.sessionPillNew} onPress={handleNewSession}>
+            <Text style={styles.sessionPillNewText}>+</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
       {error && (
         <View style={styles.errorBar}>
           <Text style={styles.errorText}>{error}</Text>
@@ -232,6 +255,33 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 16, fontWeight: "600", color: Colors.text, flex: 1, textAlign: "center" },
   menuBtn: { width: 36, alignItems: "center" },
+  sessionBar: {
+    backgroundColor: Colors.bgHeader,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  sessionBarInner: { paddingHorizontal: 12, paddingVertical: 8, gap: 8, flexDirection: "row" as const, alignItems: "center" },
+  sessionPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: Colors.bgCard,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    maxWidth: 120,
+  },
+  sessionPillActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  sessionPillText: { fontSize: 13, color: Colors.textSecondary },
+  sessionPillTextActive: { color: Colors.white },
+  sessionPillNew: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: Colors.accentLight,
+    justifyContent: "center" as const,
+    alignItems: "center" as const,
+  },
+  sessionPillNewText: { fontSize: 18, color: Colors.accentDark, fontWeight: "600" },
   menuBtnText: { fontSize: 22, color: Colors.accentDark },
   list: { paddingVertical: 8 },
   empty: { alignItems: "center", marginTop: 120 },
