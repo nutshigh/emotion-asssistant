@@ -23,6 +23,7 @@ export async function* streamChat(request: ChatRequest): AsyncGenerator<string> 
   const stream = anthropic.messages.stream({
     model: MODEL,
     max_tokens: 4000,
+    temperature: 0.7,
     system: systemPrompt,
     messages,
   });
@@ -49,13 +50,13 @@ export async function summarizeConversation(request: SummarizeRequest): Promise<
     }],
   });
 
-  const block = msg.content[0];
-  if (block.type !== "text") {
+  const textBlock = msg.content.find((b) => b.type === "text") as { type: "text"; text: string } | undefined;
+  if (!textBlock) {
     return { conversation_summary: "", profile_updates: {}, new_facts: [] };
   }
   try {
-    return JSON.parse(block.text);
+    return JSON.parse(textBlock.text);
   } catch {
-    return { conversation_summary: block.text.slice(0, 200), profile_updates: {}, new_facts: [] };
+    return { conversation_summary: textBlock.text.slice(0, 200), profile_updates: {}, new_facts: [] };
   }
 }
