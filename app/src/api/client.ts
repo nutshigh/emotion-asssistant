@@ -7,7 +7,7 @@ const DEV_URL = Platform.select({
   default: "http://localhost:3000/api",
 });
 
-const BASE_URL = __DEV__ ? DEV_URL : "https://emotion-asssistant-production.up.railway.app/api";
+export const BASE_URL = __DEV__ ? DEV_URL : "https://emotion-asssistant-production.up.railway.app/api";
 
 export async function* streamChat(request: ChatRequest): AsyncGenerator<ChatSSEEvent> {
   const events: ChatSSEEvent[] = [];
