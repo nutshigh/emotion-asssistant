@@ -26,8 +26,7 @@ export async function* streamChat(request: ChatRequest): AsyncGenerator<string> 
     temperature: 0.7,
     system: systemPrompt,
     messages,
-    thinking: { type: "disabled" },
-  } as any);
+  });
 
   for await (const event of stream) {
     if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
@@ -50,7 +49,6 @@ export async function summarizeConversation(request: SummarizeRequest): Promise<
       role: "user",
       content: `分析以下对话，返回 JSON：\n{ "conversation_summary": "一句话摘要", "profile_updates": { 需要更新的画像字段 }, "new_facts": ["新发现的事实"] }\n\n当前画像：${JSON.stringify(request.profile)}\n\n对话：\n${conversationText}`,
     }],
-    thinking: { type: "disabled" },
   } as any);
 
   const textBlock = msg.content.find((b) => b.type === "text") as { type: "text"; text: string } | undefined;
