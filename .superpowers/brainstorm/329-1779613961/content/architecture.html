@@ -1,0 +1,76 @@
+<h2>整体架构</h2>
+<p class="subtitle">三大模块：Android App · Node.js 后端 · Claude API</p>
+
+<div class="split">
+  <div class="mockup" style="flex:1.2">
+    <div class="mockup-header">Android App (React Native)</div>
+    <div class="mockup-body" style="font-size:13px;line-height:1.6">
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:8px">
+        <strong>UI 层</strong><br>
+        <span style="color:#aaa">聊天界面 · 设置页 · 引导页</span>
+      </div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:8px">
+        <strong>状态管理 (Zustand)</strong><br>
+        <span style="color:#aaa">会话状态 · 用户画像缓存 · 网络状态</span>
+      </div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:8px">
+        <strong>本地存储 (SQLite)</strong><br>
+        <span style="color:#aaa">聊天记录 · 用户画像 · 设置</span>
+      </div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px">
+        <strong>API Client</strong><br>
+        <span style="color:#aaa">HTTP 请求封装 · SSE 流式接收</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup" style="flex:1.2">
+    <div class="mockup-header">Node.js 后端 (Express + TypeScript)</div>
+    <div class="mockup-body" style="font-size:13px;line-height:1.6">
+      <div style="background:#16213e;padding:10px;border-radius:4px;margin-bottom:8px">
+        <strong>API 路由层</strong><br>
+        <span style="color:#aaa">POST /chat · GET /profile · POST /profile/sync</span>
+      </div>
+      <div style="background:#16213e;padding:10px;border-radius:4px;margin-bottom:8px">
+        <strong>核心服务层</strong><br>
+        <span style="color:#aaa">对话服务 · 画像引擎 · Prompt 构建器</span>
+      </div>
+      <div style="background:#16213e;padding:10px;border-radius:4px;margin-bottom:8px">
+        <strong>Claude API 代理</strong><br>
+        <span style="color:#aaa">API Key 管理 · Prompt Caching · 流式转发</span>
+      </div>
+      <div style="background:#16213e;padding:10px;border-radius:4px">
+        <strong>后端存储 (PostgreSQL / Redis)</strong><br>
+        <span style="color:#aaa">用户画像备份(可选) · 会话缓存 · 用量统计</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup" style="flex:0.8">
+    <div class="mockup-header">Claude API</div>
+    <div class="mockup-body" style="font-size:13px;line-height:1.6">
+      <div style="background:#0f3460;padding:10px;border-radius:4px;margin-bottom:8px">
+        <strong>System Prompt</strong><br>
+        <span style="color:#aaa">人格定义 + 用户画像注入</span>
+      </div>
+      <div style="background:#0f3460;padding:10px;border-radius:4px;margin-bottom:8px">
+        <strong>Messages</strong><br>
+        <span style="color:#aaa">对话历史 + 当前消息</span>
+      </div>
+      <div style="background:#0f3460;padding:10px;border-radius:4px">
+        <strong>Prompt Caching</strong><br>
+        <span style="color:#aaa">画像 + 历史前缀缓存，降低成本</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>关键设计决策</h3>
+  <ul>
+    <li><strong>画像存在用户设备 SQLite</strong>，后端只在处理请求时暂用，不持久化敏感画像</li>
+    <li><strong>Prompt Caching</strong> 是成本关键 — 将用户画像和对话摘要缓存在 Claude API 侧，避免每次请求都重复传输大量上下文</li>
+    <li><strong>流式 SSE</strong> 从 Claude API 直通客户端，减少首字延迟</li>
+    <li>后端可部署在轻量云服务（Railway / Fly.io / 阿里云函数计算）</li>
+  </ul>
+</div>

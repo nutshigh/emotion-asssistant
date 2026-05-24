@@ -1,0 +1,68 @@
+<h2>错误处理 & 测试策略</h2>
+
+<div class="section">
+  <h3>错误处理层次</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <tr style="background:#1a1a2e">
+      <th style="padding:10px;text-align:left;border-bottom:1px solid #333;width:15%">层级</th>
+      <th style="padding:10px;text-align:left;border-bottom:1px solid #333;width:25%">场景</th>
+      <th style="padding:10px;text-align:left;border-bottom:1px solid #333">处理方式</th>
+    </tr>
+    <tr>
+      <td style="padding:10px;border-bottom:1px solid #222;vertical-align:top">网络层</td>
+      <td style="padding:10px;border-bottom:1px solid #222;vertical-align:top">无网络、请求超时</td>
+      <td style="padding:10px;border-bottom:1px solid #222">App 内 toast 提示"网络不太稳定"，消息本地暂存，恢复后自动重试</td>
+    </tr>
+    <tr>
+      <td style="padding:10px;border-bottom:1px solid #222;vertical-align:top">API 层</td>
+      <td style="padding:10px;border-bottom:1px solid #222;vertical-align:top">Claude API 超时、限流、Key 失效</td>
+      <td style="padding:10px;border-bottom:1px solid #222">后端指数退避重试（最多 3 次）；返回友好错误给客户端"稍等一下，我走神了..."</td>
+    </tr>
+    <tr>
+      <td style="padding:10px;border-bottom:1px solid #222;vertical-align:top">数据层</td>
+      <td style="padding:10px;border-bottom:1px solid #222;vertical-align:top">SQLite 读写失败、存储满</td>
+      <td style="padding:10px;border-bottom:1px solid #222">自动清理 30 天前的对话原文（保留摘要）；提示用户清理空间</td>
+    </tr>
+    <tr>
+      <td style="padding:10px;border-bottom:1px solid #222;vertical-align:top">内容安全</td>
+      <td style="padding:10px;border-bottom:1px solid #222;vertical-align:top">用户表达自伤倾向</td>
+      <td style="padding:10px;border-bottom:1px solid #222">预设安全回复 + 提供心理援助热线信息；不过度承诺、不替代专业帮助</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>测试策略</h3>
+  <div class="split">
+    <div class="mockup" style="flex:1">
+      <div class="mockup-header">App 端</div>
+      <div class="mockup-body" style="font-size:13px;line-height:1.8">
+        <ul>
+          <li><strong>组件测试</strong> (Jest + RN Testing Library)：聊天气泡、输入框、画像卡片</li>
+          <li><strong>状态管理测试</strong>：Zustand store 的 action/reducer 逻辑</li>
+          <li><strong>SQLite 测试</strong>：CRUD、迁移、画像合并逻辑</li>
+          <li><strong>端到端</strong> (Detox)：核心流程——首次使用 → 聊天 → 查看画像</li>
+        </ul>
+      </div>
+    </div>
+    <div class="mockup" style="flex:1">
+      <div class="mockup-header">后端</div>
+      <div class="mockup-body" style="font-size:13px;line-height:1.8">
+        <ul>
+          <li><strong>单元测试</strong> (Vitest)：Prompt 构建器、画像更新解析、SSE 格式化</li>
+          <li><strong>集成测试</strong>：/api/chat 端到端（mock Claude API）</li>
+          <li><strong>契约测试</strong>：请求/响应 schema 校验</li>
+          <li><strong>负载测试</strong>：SSE 并发连接数上限验证</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>日志 & 可观测性</h3>
+  <p style="font-size:13px;color:#aaa">
+    后端记录结构化日志（请求耗时、Token 用量、错误率），接入简单的 health check 监控。
+    App 端使用崩溃收集（如 Sentry），但不记录聊天内容。
+  </p>
+</div>

@@ -1,0 +1,83 @@
+<h2>API 设计</h2>
+<p class="subtitle">App 与后端之间的 RESTful 接口。画像处理在客户端，后端只做 LLM 代理和 Prompt 编排</p>
+
+<div class="section">
+  <h3>核心接口</h3>
+  <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <tr style="background:#1a1a2e">
+      <th style="padding:10px;text-align:left;border-bottom:1px solid #333">方法</th>
+      <th style="padding:10px;text-align:left;border-bottom:1px solid #333">路径</th>
+      <th style="padding:10px;text-align:left;border-bottom:1px solid #333">说明</th>
+    </tr>
+    <tr>
+      <td style="padding:10px;border-bottom:1px solid #222;color:#4CAF50">POST</td>
+      <td style="padding:10px;border-bottom:1px solid #222;font-family:monospace">/api/chat</td>
+      <td style="padding:10px;border-bottom:1px solid #222">发送消息，SSE 流式返回</td>
+    </tr>
+    <tr>
+      <td style="padding:10px;border-bottom:1px solid #222;color:#4CAF50">POST</td>
+      <td style="padding:10px;border-bottom:1px solid #222;font-family:monospace">/api/chat/summarize</td>
+      <td style="padding:10px;border-bottom:1px solid #222">对话结束后，生成摘要 + 画像更新建议</td>
+    </tr>
+    <tr>
+      <td style="padding:10px;border-bottom:1px solid #222;color:#2196F3">GET</td>
+      <td style="padding:10px;border-bottom:1px solid #222;font-family:monospace">/api/health</td>
+      <td style="padding:10px;border-bottom:1px solid #222">健康检查</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>核心流程详解</h3>
+
+  <div class="mockup" style="margin-bottom:16px">
+    <div class="mockup-header">POST /api/chat — 发送消息（SSE 流式响应）</div>
+    <div class="mockup-body" style="font-size:13px;line-height:1.6">
+      <div style="margin-bottom:8px"><strong>请求体：</strong></div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;font-family:monospace;font-size:12px;margin-bottom:8px">
+        {<br>
+        &nbsp;&nbsp;"message": "今天心情不太好",<br>
+        &nbsp;&nbsp;"profile": { ... }, &nbsp;&nbsp;<span style="color:#aaa">// 客户端上传的完整画像</span><br>
+        &nbsp;&nbsp;"conversation_summary": "...", &nbsp;<span style="color:#aaa">// 最近对话摘要</span><br>
+        &nbsp;&nbsp;"recent_messages": [...] &nbsp;&nbsp;<span style="color:#aaa">// 最近 N 轮对话原文</span><br>
+        }
+      </div>
+      <div style="margin-bottom:8px"><strong>SSE 事件流：</strong></div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;font-family:monospace;font-size:12px">
+        data: {"type":"token","content":"我"}<br>
+        data: {"type":"token","content":"在听"}<br>
+        data: {"type":"token","content":"..."}<br>
+        <span style="color:#aaa">// ... 逐 token 流式输出 ...</span><br>
+        data: {"type":"done","message_id":"msg_abc123"}
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup" style="margin-bottom:16px">
+    <div class="mockup-header">POST /api/chat/summarize — 对话后分析</div>
+    <div class="mockup-body" style="font-size:13px;line-height:1.6">
+      <div style="margin-bottom:8px"><strong>时机：</strong>每次对话结束（用户关闭 App 或长时间无输入）后调用</div>
+      <div style="margin-bottom:8px"><strong>请求体：</strong>完整的本轮对话记录 + 当前画像</div>
+      <div style="margin-bottom:8px"><strong>响应：</strong></div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;font-family:monospace;font-size:12px">
+        {<br>
+        &nbsp;&nbsp;"conversation_summary": "用户今天分享了面试受挫的经历...",<br>
+        &nbsp;&nbsp;"profile_updates": {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"emotional_patterns": { "current_mood": "焦虑" },<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;"life_context": { "ongoing_challenges": ["面试压力"] }<br>
+        &nbsp;&nbsp;},<br>
+        &nbsp;&nbsp;"new_facts": ["用户面试了字节跳动", "有一只叫汤圆的猫"]<br>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>设计原则</h3>
+  <ul>
+    <li><strong>后端无状态</strong> — 不存储用户数据，画像由客户端上传、处理后返回、客户端合并存储</li>
+    <li><strong>只有 2 个核心接口</strong> — chat（实时）+ summarize（异步），够用不堆</li>
+    <li><strong>SSE 而非 WebSocket</strong> — 单向流足够，实现更简单</li>
+  </ul>
+</div>

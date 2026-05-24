@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "SoulMate",
+    "slug": "emotion-companion",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": { "backgroundColor": "#FFF8F0" },
+    "android": { "package": "com.soulmate.app", "adaptiveIcon": { "backgroundColor": "#FFF8F0" } },
+    "plugins": ["expo-sqlite"]
+  }
+}

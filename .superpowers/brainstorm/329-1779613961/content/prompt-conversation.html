@@ -1,0 +1,100 @@
+<h2>Prompt 构建 & 对话管理</h2>
+<p class="subtitle">如何把画像变成"更懂你"的回复，以及如何控制上下文成本</p>
+
+<div class="section">
+  <h3>System Prompt 三段式结构</h3>
+  <div class="mockup">
+    <div class="mockup-header">完整 System Prompt 模板</div>
+    <div class="mockup-body" style="font-size:13px;line-height:1.7;font-family:monospace">
+      <div style="background:#1a1a2e;padding:8px 12px;border-radius:4px;margin-bottom:6px;border-left:3px solid #e94560">
+        <strong>【固定底座】</strong> — 硬编码，缓存友好<br>
+        <span style="color:#aaa">
+          你是 SoulMate，一个情感陪护助手。你的核心原则：<br>
+          1. 真诚共情，不模板化回复<br>
+          2. 记住用户说过的重要事情<br>
+          3. 人格随交互自然进化，不做刻意迎合<br>
+          4. 安全边界：不鼓励自伤、不提供医疗诊断、不替代专业心理治疗
+        </span>
+      </div>
+      <div style="background:#1a1a2e;padding:8px 12px;border-radius:4px;margin-bottom:6px;border-left:3px solid #0f3460">
+        <strong>【用户画像】</strong> — 从本地读取注入，动态更新<br>
+        <span style="color:#aaa">
+          用户称呼：小明 | 关系阶段：熟悉期(3个月)<br>
+          沟通风格：偏随意、喜欢用表情包、回复简洁<br>
+          当前情绪状态：工作压力大，需要放松<br>
+          兴趣话题：编程、独立游戏、养猫<br>
+          回避话题：暂无<br>
+          重要背景：最近在准备跳槽面试
+        </span>
+      </div>
+      <div style="background:#1a1a2e;padding:8px 12px;border-radius:4px;border-left:3px solid #533483">
+        <strong>【会话上下文】</strong> — 最近对话摘要 + 本轮目标<br>
+        <span style="color:#aaa">
+          最近 3 次对话摘要：<br>
+          - 05/23: 用户吐槽面试被问倒，你安慰并给了复习建议<br>
+          - 05/22: 用户分享猫的照片，闲聊了宠物话题<br>
+          - 05/20: 用户加班到很晚，你提醒注意休息<br>
+          本轮：用户刚下班，看起来想闲聊放松
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>对话上下文管理策略</h3>
+  <div class="split">
+    <div class="mockup" style="flex:1">
+      <div class="mockup-header">三层上下文</div>
+      <div class="mockup-body" style="font-size:13px;line-height:1.8">
+        <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:6px">
+          <strong>热数据：最近 N 轮对话原文</strong><br>
+          <span style="color:#aaa">直接放入 messages 数组</span>
+          <br><span style="color:#888">N 取决于 token 预算，动态调整</span>
+        </div>
+        <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:6px">
+          <strong>温数据：近期对话摘要</strong><br>
+          <span style="color:#aaa">Claude 定期总结历史对话</span>
+          <br><span style="color:#888">每次对话结束后异步生成</span>
+        </div>
+        <div style="background:#1a1a2e;padding:10px;border-radius:4px">
+          <strong>冷数据：长期记忆关键事件</strong><br>
+          <span style="color:#aaa">结构化存储重要信息</span>
+          <br><span style="color:#888">"用户3月离职" "7月生日" 等事实</span>
+        </div>
+      </div>
+    </div>
+    <div class="mockup" style="flex:1">
+      <div class="mockup-header">Token 预算分配 (以 32K 上下文为例)</div>
+      <div class="mockup-body" style="font-size:13px;line-height:1.8">
+        <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:4px">
+          System Prompt 底座: <span style="color:#e94560">~500 tokens</span>
+        </div>
+        <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:4px">
+          用户画像: <span style="color:#e94560">~800 tokens</span>
+        </div>
+        <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:4px">
+          对话摘要: <span style="color:#e94560">~500 tokens</span>
+        </div>
+        <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:4px">
+          Prompt Caching 预留: <span style="color:#0f3460">~2000 tokens</span>
+        </div>
+        <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:4px">
+          最近对话原文: <span style="color:#e94560">~8000 tokens</span>
+        </div>
+        <div style="background:#1a1a2e;padding:10px;border-radius:4px">
+          输出预留: <span style="color:#e94560">~4000 tokens</span>
+        </div>
+        <div style="background:#16213e;padding:8px;border-radius:4px;margin-top:6px;text-align:center">
+          总计: ~16K / 32K，留有充足余量
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Prompt Caching 策略</h3>
+  <p>将 <strong>固定底座 + 用户画像 + 对话摘要</strong> 标记为 cache breakpoint，后续请求复用缓存，降低 90% 的 System Prompt 输入成本。</p>
+  <p style="color:#aaa;font-size:13px">画像更新时才刷新缓存，一般每天 1-2 次，不影响实时对话体验。</p>
+</div>

@@ -1,0 +1,94 @@
+<h2>App 界面设计</h2>
+<p class="subtitle">核心 3 个页面：聊天 · 画像 · 设置</p>
+
+<div class="split">
+  <div class="mockup" style="flex:0.9">
+    <div class="mockup-header">主聊天页</div>
+    <div class="mockup-body" style="font-size:12px;line-height:1.6;padding:0">
+      <div style="background:#0f3460;color:white;padding:10px 12px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-weight:600">SoulMate</span>
+        <span style="font-size:20px">☰</span>
+      </div>
+      <div style="padding:10px;min-height:280px;background:#1a1a2e">
+        <div style="display:flex;justify-content:flex-start;margin-bottom:10px">
+          <div style="background:#16213e;padding:8px 10px;border-radius:12px 12px 12px 2px;max-width:80%;color:#ddd">
+            晚上好呀小明～今天面试怎么样？准备了那么久应该发挥不错吧
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+          <div style="background:#533483;padding:8px 10px;border-radius:12px 12px 2px 12px;max-width:80%;color:#ddd">
+            别提了，算法题又挂了 😮‍💨
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-start;margin-bottom:10px">
+          <div style="background:#16213e;padding:8px 10px;border-radius:12px 12px 12px 2px;max-width:80%;color:#ddd">
+            啊...算法题确实恶心。不过别太苛责自己，你已经很努力了。要不要聊聊具体是哪道题？也许我能帮你理理思路
+          </div>
+        </div>
+      </div>
+      <div style="padding:8px 10px;background:#0f3460;display:flex;align-items:center;gap:6px">
+        <input class="mock-input" placeholder="说点什么..." style="flex:1;margin:0;padding:6px 10px;font-size:12px">
+        <button class="mock-button" style="margin:0;padding:6px 14px;font-size:12px">发送</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup" style="flex:0.7">
+    <div class="mockup-header">画像页（用户可见）</div>
+    <div class="mockup-body" style="font-size:12px;line-height:1.6;padding:0">
+      <div style="background:#0f3460;color:white;padding:10px 12px;font-weight:600">我对你的了解</div>
+      <div style="padding:10px;background:#1a1a2e;min-height:280px">
+        <div style="background:#16213e;padding:8px 10px;border-radius:6px;margin-bottom:8px">
+          <span style="color:#aaa">🗣️ 沟通风格</span><br>
+          随意 · 爱用 emoji · 回复简洁
+        </div>
+        <div style="background:#16213e;padding:8px 10px;border-radius:6px;margin-bottom:8px">
+          <span style="color:#aaa">💭 近期情绪</span><br>
+          工作焦虑 · 面试压力
+        </div>
+        <div style="background:#16213e;padding:8px 10px;border-radius:6px;margin-bottom:8px">
+          <span style="color:#aaa">🎯 兴趣话题</span><br>
+          编程 · 独立游戏 · 养猫
+        </div>
+        <div style="background:#16213e;padding:8px 10px;border-radius:6px;margin-bottom:8px">
+          <span style="color:#aaa">🏠 生活背景</span><br>
+          程序员 · 准备跳槽
+        </div>
+        <div style="background:#16213e;padding:8px 10px;border-radius:6px">
+          <span style="color:#aaa">🤝 我们认识</span><br>
+          3 个月 · 聊了 127 次
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup" style="flex:0.6">
+    <div class="mockup-header">设置页</div>
+    <div class="mockup-body" style="font-size:12px;line-height:1.6;padding:0">
+      <div style="background:#0f3460;color:white;padding:10px 12px;font-weight:600">设置</div>
+      <div style="padding:10px;background:#1a1a2e;min-height:280px">
+        <div style="background:#16213e;padding:8px 10px;border-radius:4px;margin-bottom:6px;display:flex;justify-content:space-between">
+          语音输入 <span style="color:#aaa">○</span>
+        </div>
+        <div style="background:#16213e;padding:8px 10px;border-radius:4px;margin-bottom:6px;display:flex;justify-content:space-between">
+          回复长度 <span style="color:#aaa">中等</span>
+        </div>
+        <div style="background:#16213e;padding:8px 10px;border-radius:4px;margin-bottom:6px;display:flex;justify-content:space-between">
+          每日提醒 <span style="color:#aaa">20:00</span>
+        </div>
+        <div style="height:1px;background:#333;margin:10px 0"></div>
+        <div style="background:#16213e;padding:8px 10px;border-radius:4px;margin-bottom:6px;color:#e94560">
+          清除所有画像数据
+        </div>
+        <div style="background:#16213e;padding:8px 10px;border-radius:4px">
+          导出我的数据
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>导航结构</h3>
+  <p style="color:#aaa;font-size:13px">底部三 Tab：<strong>聊天</strong> | <strong>画像</strong> | <strong>设置</strong>，聊天为主页面，画像让用户透明了解系统对自己的认知，设置管理偏好和隐私。</p>
+</div>

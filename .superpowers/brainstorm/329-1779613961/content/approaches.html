@@ -1,0 +1,38 @@
+<h2>三种技术架构方案对比</h2>
+<p class="subtitle">核心差异在 App 框架和后端厚度</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>React Native + Node.js 后端（推荐）</h3>
+      <p>RN 写 Android App，Node.js/Express 做 API 代理 + 画像引擎。Claude API 驱动对话。生态成熟，前端组件丰富，聊天 UI 有现成方案。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Kotlin 原生 + 轻量后端</h3>
+      <p>Jetpack Compose 写原生 Android UI，后端只做 API Key 保护代理，画像逻辑大部分在设备端。APK 最小，性能最佳，但开发周期最长。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Flutter + Python FastAPI 后端</h3>
+      <p>Flutter 跨平台 UI，FastAPI 做后端，Python 生态方便做画像分析/NLP。一次编写可扩展 iOS，但 Flutter 聊天 UI 组件不如 RN 成熟。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>我的推荐：方案 A</h3>
+  <p>理由：</p>
+  <ul>
+    <li>React Native 聊天类 App 生态最成熟（gifted-chat 等组件可直接用）</li>
+    <li>Node.js 后端轻量够用，与前端语言统一（TypeScript），开发效率高</li>
+    <li>Claude API 的 Node SDK 最完善，prompt caching 可降低长期使用成本</li>
+    <li>后续如果要扩展到 iOS，RN 可以直接复用 90% 代码</li>
+    <li>社区资源丰富，遇到问题容易解决</li>
+  </ul>
+</div>

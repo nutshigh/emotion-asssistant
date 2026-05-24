@@ -1,0 +1,87 @@
+<h2>用户画像系统 —「越用越懂你」的核心</h2>
+<p class="subtitle">画像在设备端存储和演化，注入 Prompt 实现个性化</p>
+
+<div class="split">
+  <div class="mockup" style="flex:1">
+    <div class="mockup-header">画像维度</div>
+    <div class="mockup-body" style="font-size:13px;line-height:1.8">
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:6px">
+        🗣️ <strong>沟通风格</strong><br>
+        <span style="color:#aaa">正式/随意、简洁/详细、幽默程度、emoji 使用</span>
+      </div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:6px">
+        💭 <strong>情绪模式</strong><br>
+        <span style="color:#aaa">常见情绪、压力源、应对方式、最佳回应策略</span>
+      </div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:6px">
+        🎯 <strong>兴趣与话题</strong><br>
+        <span style="color:#aaa">高频话题、置信度、讨论频率</span>
+      </div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:6px">
+        🏠 <strong>生活背景</strong><br>
+        <span style="color:#aaa">职业、日常节奏、重要关系、当前挑战</span>
+      </div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px;margin-bottom:6px">
+        ⏰ <strong>交互偏好</strong><br>
+        <span style="color:#aaa">活跃时段、平均会话时长、回复长度偏好</span>
+      </div>
+      <div style="background:#1a1a2e;padding:10px;border-radius:4px">
+        🤝 <strong>关系状态</strong><br>
+        <span style="color:#aaa">关系阶段、回避话题、内部梗、共享记忆</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup" style="flex:1.3">
+    <div class="mockup-header">演化流程</div>
+    <div class="mockup-body" style="font-size:13px;line-height:1.7">
+      <div style="text-align:center;color:#aaa;margin-bottom:8px">
+        ┌──────────────────────────────┐<br>
+        │  用户发送消息                  │<br>
+        └──────────────┬───────────────┘<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+        ┌──────────────────────────────┐<br>
+        │  App: 读取本地画像 + 最近对话   │<br>
+        └──────────────┬───────────────┘<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+        ┌──────────────────────────────┐<br>
+        │  后端: 画像注入 System Prompt  │<br>
+        └──────────────┬───────────────┘<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+        ┌──────────────────────────────┐<br>
+        │  Claude API: 个性化回复       │<br>
+        └──────────────┬───────────────┘<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+        ┌──────────────────────────────┐<br>
+        │  后端: 分析本轮对话，提取新特征 │<br>
+        └──────────────┬───────────────┘<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;▼<br>
+        ┌──────────────────────────────┐<br>
+        │  App: 合并更新本地画像         │<br>
+        └──────────────────────────────┘
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>关键设计点</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>冷启动策略</h4>
+      <ul>
+        <li>不做问卷调查，从自然对话中学习</li>
+        <li>前 20-30 轮对话，助手更主动提问了解用户</li>
+        <li>画像字段有置信度，低置信度内容优先级低</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>隐私保护</h4>
+      <ul>
+        <li>画像数据仅存设备 SQLite，不上传服务端</li>
+        <li>每次请求将画像片段注入 Prompt 发送，请求结束后服务端不保留</li>
+        <li>提供「清除画像」和「导出画像」功能</li>
+      </ul>
+    </div>
+  </div>
+</div>
