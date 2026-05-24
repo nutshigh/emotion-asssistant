@@ -1,5 +1,4 @@
 import { Platform } from "react-native";
-import { EventSourcePolyfill } from "event-source-polyfill";
 import type { ChatRequest, ChatSSEEvent, SummarizeRequest, SummarizeResponse } from "../types";
 
 const DEV_URL = Platform.select({
@@ -10,51 +9,75 @@ const DEV_URL = Platform.select({
 export const BASE_URL = __DEV__ ? DEV_URL : "https://emotion-asssistant-production.up.railway.app/api";
 
 export async function* streamChat(request: ChatRequest): AsyncGenerator<ChatSSEEvent> {
+  let lastIndex = 0;
+  let buffer = "";
   const events: ChatSSEEvent[] = [];
-  let nextResolve: ((r: IteratorResult<ChatSSEEvent>) => void) | null = null;
-  let done = false;
-  let error: string | null = null;
+  let resolveNext: ((r: IteratorResult<ChatSSEEvent>) => void) | null = null;
+  let finished = false;
+  let errorMsg: string | null = null;
 
-  const es = new EventSourcePolyfill(`${BASE_URL}/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-    heartbeatTimeout: 60000,
-  });
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", `${BASE_URL}/chat`);
+  xhr.setRequestHeader("Content-Type", "application/json");
+  xhr.timeout = 60000;
 
-  es.onmessage = (e: MessageEvent) => {
-    try {
-      const event = JSON.parse(e.data) as ChatSSEEvent;
-      if (nextResolve) {
-        nextResolve({ value: event, done: false });
-        nextResolve = null;
-      } else {
-        events.push(event);
+  xhr.onreadystatechange = () => {
+    if (xhr.readyState === 3 || xhr.readyState === 4) {
+      const text = xhr.responseText || "";
+      if (text.length > lastIndex) {
+        const newData = text.slice(lastIndex);
+        lastIndex = text.length;
+        // normalize line endings
+        buffer += newData.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const event = JSON.parse(line.slice(6)) as ChatSSEEvent;
+            if (resolveNext) {
+              resolveNext({ value: event, done: false });
+              resolveNext = null;
+            } else {
+              events.push(event);
+            }
+            if (event.type === "done") finished = true;
+          } catch { /* skip */ }
+        }
       }
-      if (event.type === "done") {
-        done = true;
-        es.close();
+      if (xhr.readyState === 4) finished = true;
+      // Wake pending iterator
+      if (finished && resolveNext) {
+        resolveNext({ value: undefined as any, done: true });
+        resolveNext = null;
       }
-    } catch { /* skip */ }
+    }
   };
 
-  es.onerror = () => {
-    error = "连接中断";
-    done = true;
-    es.close();
+  xhr.onerror = () => {
+    errorMsg = "网络连接失败，请检查网络后重试";
+    finished = true;
   };
+
+  xhr.ontimeout = () => {
+    errorMsg = "请求超时，请稍后重试";
+    finished = true;
+  };
+
+  xhr.send(JSON.stringify(request));
 
   while (true) {
     if (events.length > 0) {
       const event = events.shift()!;
       yield event;
       if (event.type === "done") break;
-    } else if (done) {
-      if (error) throw new Error(error);
+    } else if (finished) {
+      if (errorMsg) throw new Error(errorMsg);
       break;
     } else {
       await new Promise<IteratorResult<ChatSSEEvent>>((resolve) => {
-        nextResolve = resolve;
+        resolveNext = resolve;
       });
     }
   }
