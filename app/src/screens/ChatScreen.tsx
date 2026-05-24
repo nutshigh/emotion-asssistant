@@ -106,7 +106,6 @@ export function ChatScreen() {
               key={s.id}
               style={[drawerStyles.item, s.id === currentSessionId && drawerStyles.itemActive]}
               onPress={() => handleSwitchSession(s)}
-              onLongPress={() => handleDeleteSession(s)}
             >
               <View style={{ flex: 1 }}>
                 <Text style={drawerStyles.itemTitle} numberOfLines={1}>{s.title}</Text>
@@ -114,7 +113,13 @@ export function ChatScreen() {
                   {new Date(s.last_active_at).toLocaleDateString("zh-CN")}
                 </Text>
               </View>
-              <Text style={drawerStyles.itemArrow}>›</Text>
+              <TouchableOpacity
+                style={drawerStyles.deleteBtn}
+                onPress={() => handleDeleteSession(s)}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Text style={drawerStyles.deleteBtnText}>✕</Text>
+              </TouchableOpacity>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -137,29 +142,6 @@ export function ChatScreen() {
           {currentSession?.title || "SoulMate"}
         </Text>
         <View style={styles.menuBtn} />
-      </View>
-
-      {/* Session quick-switch bar */}
-      <View style={styles.sessionBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sessionBarInner}>
-          {sessions.map((s) => (
-            <TouchableOpacity
-              key={s.id}
-              style={[styles.sessionPill, s.id === currentSessionId && styles.sessionPillActive]}
-              onPress={() => handleSwitchSession(s)}
-            >
-              <Text
-                style={[styles.sessionPillText, s.id === currentSessionId && styles.sessionPillTextActive]}
-                numberOfLines={1}
-              >
-                {s.title}
-              </Text>
-            </TouchableOpacity>
-          ))}
-          <TouchableOpacity style={styles.sessionPillNew} onPress={handleNewSession}>
-            <Text style={styles.sessionPillNewText}>+</Text>
-          </TouchableOpacity>
-        </ScrollView>
       </View>
 
       {error && (
@@ -192,10 +174,15 @@ export function ChatScreen() {
 
       <ChatInput onSend={handleSend} disabled={isSending} />
 
-      {/* Floating new-conversation button */}
-      <TouchableOpacity style={styles.fab} onPress={handleNewSession} activeOpacity={0.8}>
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
+      {/* Floating action buttons */}
+      <View style={styles.fabContainer}>
+        <TouchableOpacity style={styles.fabSmall} onPress={() => setDrawerOpen(true)} activeOpacity={0.8}>
+          <Text style={styles.fabSmallText}>☰</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.fab} onPress={handleNewSession} activeOpacity={0.8}>
+          <Text style={styles.fabText}>+</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Drawer Modal */}
       <Modal visible={drawerOpen} animationType="none" transparent onRequestClose={() => setDrawerOpen(false)}>
@@ -238,7 +225,8 @@ const drawerStyles = StyleSheet.create({
   itemActive: { borderColor: Colors.accent, backgroundColor: "#FFF0E5" },
   itemTitle: { fontSize: 14, color: Colors.text, fontWeight: "500" },
   itemTime: { fontSize: 11, color: Colors.textMuted, marginTop: 4 },
-  itemArrow: { fontSize: 18, color: Colors.textMuted, marginLeft: 8 },
+  deleteBtn: { padding: 4, marginLeft: 4 },
+  deleteBtnText: { fontSize: 14, color: Colors.danger },
 });
 
 const styles = StyleSheet.create({
@@ -255,33 +243,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 16, fontWeight: "600", color: Colors.text, flex: 1, textAlign: "center" },
   menuBtn: { width: 36, alignItems: "center" },
-  sessionBar: {
-    backgroundColor: Colors.bgHeader,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  sessionBarInner: { paddingHorizontal: 12, paddingVertical: 8, gap: 8, flexDirection: "row" as const, alignItems: "center" },
-  sessionPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: Colors.bgCard,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    maxWidth: 120,
-  },
-  sessionPillActive: { backgroundColor: Colors.accent, borderColor: Colors.accent },
-  sessionPillText: { fontSize: 13, color: Colors.textSecondary },
-  sessionPillTextActive: { color: Colors.white },
-  sessionPillNew: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.accentLight,
-    justifyContent: "center" as const,
-    alignItems: "center" as const,
-  },
-  sessionPillNewText: { fontSize: 18, color: Colors.accentDark, fontWeight: "600" },
   menuBtnText: { fontSize: 22, color: Colors.accentDark },
   list: { paddingVertical: 8 },
   empty: { alignItems: "center", marginTop: 120 },
@@ -300,10 +261,8 @@ const styles = StyleSheet.create({
   },
   errorText: { color: Colors.accentDark, fontSize: 13, flex: 1 },
   errorDismiss: { color: Colors.textMuted, fontSize: 16, paddingLeft: 12 },
+  fabContainer: { position: "absolute", bottom: 70, right: 16, gap: 10 },
   fab: {
-    position: "absolute",
-    bottom: 70,
-    right: 16,
     width: 48,
     height: 48,
     borderRadius: 24,
@@ -316,5 +275,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
+  fabSmall: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.bgCard,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
   fabText: { fontSize: 24, color: Colors.white, marginTop: -1 },
+  fabSmallText: { fontSize: 18, color: Colors.accentDark },
 });
