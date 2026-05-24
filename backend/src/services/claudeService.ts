@@ -14,12 +14,15 @@ const MODEL = process.env.MODEL || "claude-sonnet-4-6";
 export async function* streamChat(request: ChatRequest): AsyncGenerator<string> {
   const systemPrompt = buildSystemPrompt(request.profile, request.conversation_summary);
 
+  // DeepSeek expects content as array of text blocks
+  const toContent = (text: string) => [{ type: "text" as const, text }];
+
   const messages = [
     ...request.recent_messages.map((m: Message) => ({
       role: m.role as "user" | "assistant",
-      content: m.content,
+      content: toContent(m.content),
     })),
-    { role: "user" as const, content: request.message },
+    { role: "user" as const, content: toContent(request.message) },
   ];
 
   // Use raw fetch to DeepSeek's SSE endpoint instead of Anthropic SDK streaming
@@ -98,7 +101,7 @@ export async function summarizeConversation(request: SummarizeRequest): Promise<
     system: "你是一个用户画像分析器。根据对话内容，提取用户的新信息并更新画像。只返回 JSON，不要其他文字。",
     messages: [{
       role: "user",
-      content: `分析以下对话，返回 JSON：\n{ "conversation_summary": "一句话摘要", "profile_updates": { 需要更新的画像字段 }, "new_facts": ["新发现的事实"] }\n\n当前画像：${JSON.stringify(request.profile)}\n\n对话：\n${conversationText}`,
+      content: [{ type: "text", text: `分析以下对话，返回 JSON：\n{ "conversation_summary": "一句话摘要", "profile_updates": { 需要更新的画像字段 }, "new_facts": ["新发现的事实"] }\n\n当前画像：${JSON.stringify(request.profile)}\n\n对话：\n${conversationText}` }],
     }],
   } as any);
 
