@@ -8,33 +8,93 @@ const DEV_URL = Platform.select({
 
 const BASE_URL = __DEV__ ? DEV_URL : "https://emotion-asssistant-production.up.railway.app/api";
 
-export async function* streamChat(request: ChatRequest): AsyncGenerator<ChatSSEEvent> {
-  const response = await fetch(`${BASE_URL}/chat`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(request),
-  });
+export function streamChat(request: ChatRequest): AsyncGenerator<ChatSSEEvent> {
+  let lastIndex = 0;
+  let buffer = "";
+  let done = false;
+  const events: ChatSSEEvent[] = [];
+  let nextResolve: ((r: IteratorResult<ChatSSEEvent>) => void) | null = null;
 
-  if (!response.ok) {
-    const err = await response.text().catch(() => "请求失败");
-    throw new Error(err || "请求失败");
-  }
+  function processChunk(text: string) {
+    // Normalize line endings: \r\n → \n, then split
+    buffer += text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
 
-  const text = await response.text();
-  const lines = text.split("\n");
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith("data: ")) continue;
-
-    try {
-      const event = JSON.parse(trimmed.slice(6)) as ChatSSEEvent;
-      yield event;
-      if (event.type === "done") break;
-    } catch {
-      // skip unparseable lines
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      try {
+        const event = JSON.parse(line.slice(6)) as ChatSSEEvent;
+        if (nextResolve) {
+          nextResolve({ value: event, done: false });
+          nextResolve = null;
+        } else {
+          events.push(event);
+        }
+        if (event.type === "done") {
+          done = true;
+        }
+      } catch { /* skip */ }
     }
   }
+
+  function finalize() {
+    done = true;
+    if (nextResolve) {
+      nextResolve({ value: undefined as any, done: true });
+      nextResolve = null;
+    }
+  }
+
+  async function* generator(): AsyncGenerator<ChatSSEEvent> {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${BASE_URL}/chat`);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader("Accept", "text/event-stream");
+
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === 3 || xhr.readyState === 4) {
+        const text = xhr.responseText || "";
+        if (text.length > lastIndex) {
+          processChunk(text.slice(lastIndex));
+          lastIndex = text.length;
+        }
+        if (xhr.readyState === 4) finalize();
+      }
+    };
+
+    // Fallback: some platforms only fire readyState 4 without 3
+    xhr.onload = () => {
+      const text = xhr.responseText || "";
+      if (text.length > lastIndex) {
+        processChunk(text.slice(lastIndex));
+        lastIndex = text.length;
+      }
+      finalize();
+    };
+
+    xhr.onerror = () => {
+      finalize();
+    };
+
+    xhr.send(JSON.stringify(request));
+
+    while (true) {
+      if (events.length > 0) {
+        const event = events.shift()!;
+        yield event;
+        if (event.type === "done") break;
+      } else if (done) {
+        break;
+      } else {
+        await new Promise<IteratorResult<ChatSSEEvent>>((resolve) => {
+          nextResolve = resolve;
+        });
+      }
+    }
+  }
+
+  return generator();
 }
 
 export async function summarizeConversation(request: SummarizeRequest): Promise<SummarizeResponse> {
