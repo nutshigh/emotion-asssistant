@@ -34,7 +34,7 @@ export function Navigation() {
           name="Chat"
           component={ChatScreen}
           options={{
-            title: "SoulMate",
+            headerShown: false,
             tabBarLabel: "聊天",
             tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} />,
           }}

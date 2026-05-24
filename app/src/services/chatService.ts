@@ -1,6 +1,12 @@
 import { useChatStore } from "../store/chatStore";
 import { useProfileStore } from "../store/profileStore";
-import { saveMessage, getRecentMessages, saveConversationSummary } from "../db/chatRepository";
+import {
+  saveMessage,
+  getRecentMessages,
+  saveConversationSummary,
+  updateSessionTitle,
+  touchSession,
+} from "../db/chatRepository";
 import { saveProfile } from "../db/profileRepository";
 import { streamChat as apiStreamChat, summarizeConversation } from "../api/client";
 import { mergeProfileUpdates } from "./profileService";
@@ -13,6 +19,8 @@ export async function sendMessage(content: string): Promise<void> {
   store.setError(null);
   store.setSending(true);
 
+  const sessionId = store.currentSessionId;
+
   const userMsg: Message = {
     id: `u_${Date.now()}`,
     role: "user",
@@ -21,9 +29,18 @@ export async function sendMessage(content: string): Promise<void> {
   };
 
   store.addMessage(userMsg);
-  await saveMessage(userMsg);
+  await saveMessage({ ...userMsg, session_id: sessionId });
 
-  const recentMessages = await getRecentMessages(30);
+  // Auto-title: use first user message as session title
+  const recentMessages = await getRecentMessages(sessionId, 30);
+  const userMessages = recentMessages.filter((m) => m.role === "user");
+  if (userMessages.length <= 1) {
+    const title = content.slice(0, 20) + (content.length > 20 ? "..." : "");
+    await updateSessionTitle(sessionId, title);
+    store.updateSessionTitle(sessionId, title);
+  }
+
+  await touchSession(sessionId);
   const summaries = await (await import("../db/chatRepository")).getConversationSummaries(3);
   const summary = summaries.join("\n");
 
@@ -52,7 +69,7 @@ export async function sendMessage(content: string): Promise<void> {
       timestamp: new Date().toISOString(),
     };
     store.addMessage(assistantMsg);
-    await saveMessage(assistantMsg);
+    await saveMessage({ ...assistantMsg, session_id: sessionId });
   } catch (err: any) {
     store.setError(err?.message || "发送失败，请检查网络后重试");
   } finally {

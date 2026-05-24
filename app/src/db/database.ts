@@ -11,8 +11,15 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
 
 async function initializeSchema(db: SQLite.SQLiteDatabase): Promise<void> {
   await db.execAsync(`
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL DEFAULT '新对话',
+      created_at TEXT NOT NULL,
+      last_active_at TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,
+      session_id TEXT NOT NULL DEFAULT '',
       role TEXT NOT NULL CHECK(role IN ('user', 'assistant')),
       content TEXT NOT NULL,
       timestamp TEXT NOT NULL
@@ -26,6 +33,6 @@ async function initializeSchema(db: SQLite.SQLiteDatabase): Promise<void> {
       summary TEXT NOT NULL,
       created_at TEXT NOT NULL
     );
-    CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp DESC);
+    CREATE INDEX IF NOT EXISTS idx_messages_session ON messages(session_id, timestamp DESC);
   `);
 }
