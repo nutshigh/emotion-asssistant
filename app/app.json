@@ -6,8 +6,22 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": { "backgroundColor": "#FFF8F0" },
-    "android": { "package": "com.soulmate.app", "adaptiveIcon": { "backgroundColor": "#FFF8F0" } },
-    "plugins": ["expo-sqlite"]
+    "splash": {
+      "backgroundColor": "#FFF8F0"
+    },
+    "android": {
+      "package": "com.soulmate.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FFF8F0"
+      }
+    },
+    "plugins": [
+      "expo-sqlite"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "151f068d-440e-471f-b8d4-c4fd5ffc8b66"
+      }
+    }
   }
 }
