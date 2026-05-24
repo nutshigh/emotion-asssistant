@@ -13,10 +13,19 @@
       "package": "com.soulmate.app",
       "adaptiveIcon": {
         "backgroundColor": "#FFF8F0"
-      }
+      },
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ]
     },
     "plugins": [
-      "expo-sqlite"
+      "expo-sqlite",
+      ["expo-build-properties", {
+        "android": {
+          "usesCleartextTraffic": true
+        }
+      }]
     ],
     "extra": {
       "eas": {
