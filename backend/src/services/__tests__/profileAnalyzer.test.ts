@@ -18,14 +18,14 @@ describe("mergeProfileUpdates", () => {
 
   it("appends new items to arrays", () => {
     const profile: UserProfile = { ...DEFAULT_PROFILE };
-    const updates = { emotional_patterns: { common_moods: ["焦虑"] } };
+    const updates = { emotional_patterns: { common_moods: ["焦虑"], stress_triggers: [], coping_methods: [], best_response_style: "" } };
     const merged = mergeProfileUpdates(profile, updates);
     expect(merged.emotional_patterns.common_moods).toContain("焦虑");
   });
 
   it("does not mutate the original profile", () => {
     const profile: UserProfile = { ...DEFAULT_PROFILE };
-    const updates = { life_context: { occupation: "设计师" } };
+    const updates = { life_context: { occupation: "设计师", routine: "", important_relationships: [], ongoing_challenges: [] } };
     const merged = mergeProfileUpdates(profile, updates);
     expect(merged.life_context.occupation).toBe("设计师");
     expect(profile.life_context.occupation).toBe("");
