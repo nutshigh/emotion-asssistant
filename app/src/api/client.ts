@@ -46,7 +46,26 @@ export async function* streamChat(request: ChatRequest): AsyncGenerator<ChatSSEE
           } catch { /* skip */ }
         }
       }
-      if (xhr.readyState === 4) finished = true;
+      if (xhr.readyState === 4) {
+        // Flush remaining buffer — last line(s) might still be incomplete
+        if (buffer.trim()) {
+          const line = buffer.trim();
+          buffer = "";
+          if (line.startsWith("data: ")) {
+            try {
+              const event = JSON.parse(line.slice(6)) as ChatSSEEvent;
+              if (resolveNext) {
+                resolveNext({ value: event, done: false });
+                resolveNext = null;
+              } else {
+                events.push(event);
+              }
+              if (event.type === "done") finished = true;
+            } catch { /* skip */ }
+          }
+        }
+        finished = true;
+      }
       // Wake pending iterator
       if (finished && resolveNext) {
         resolveNext({ value: undefined as any, done: true });
