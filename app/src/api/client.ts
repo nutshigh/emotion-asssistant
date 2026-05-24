@@ -14,77 +14,92 @@ export function streamChat(request: ChatRequest): {
   let lastIndex = 0;
   let buffer = "";
   let done = false;
+  let hasError = false;
   let resolveNext: ((value: IteratorResult<ChatSSEEvent>) => void) | null = null;
   const pending: ChatSSEEvent[] = [];
 
-  function parseEvents(): void {
+  function flushPending() {
+    while (resolveNext && pending.length > 0) {
+      const event = pending.shift()!;
+      resolveNext({ value: event, done: false });
+      resolveNext = null;
+    }
+    if (done && resolveNext) {
+      resolveNext({ value: undefined as any, done: true });
+      resolveNext = null;
+    }
+  }
+
+  function parseNewData(newData: string) {
+    buffer += newData;
     const lines = buffer.split("\n");
     buffer = lines.pop() || "";
 
     for (const line of lines) {
-      if (line.startsWith("data: ")) {
-        try {
-          const event = JSON.parse(line.slice(6)) as ChatSSEEvent;
-          if (resolveNext) {
-            resolveNext({ value: event, done: false });
-            resolveNext = null;
-          } else {
-            pending.push(event);
-          }
-          if (event.type === "done") {
-            done = true;
-          }
-        } catch { /* skip malformed */ }
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data: ")) continue;
+
+      try {
+        const event = JSON.parse(trimmed.slice(6)) as ChatSSEEvent;
+        pending.push(event);
+        if (event.type === "done") {
+          done = true;
+        }
+      } catch {
+        // skip unparseable lines
       }
     }
+    flushPending();
   }
 
   const xhr = new XMLHttpRequest();
   xhr.open("POST", `${BASE_URL}/chat`);
   xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.send(JSON.stringify(request));
+  xhr.setRequestHeader("Accept", "text/event-stream");
 
-  xhr.onprogress = () => {
-    const newData = xhr.responseText.slice(lastIndex);
-    lastIndex = xhr.responseText.length;
-    buffer += newData;
-    parseEvents();
+  xhr.onreadystatechange = () => {
+    try {
+      if (xhr.readyState === 3 || xhr.readyState === 4) {
+        const currentText = xhr.responseText || "";
+        if (currentText.length > lastIndex) {
+          const newData = currentText.slice(lastIndex);
+          lastIndex = currentText.length;
+          parseNewData(newData);
+        }
+        if (xhr.readyState === 4) {
+          done = true;
+          flushPending();
+        }
+      }
+    } catch {
+      // ignore read errors
+    }
   };
 
   xhr.onerror = () => {
+    hasError = true;
     done = true;
-    const errorEvent: ChatSSEEvent = { type: "done" };
-    if (resolveNext) {
-      resolveNext({ value: errorEvent, done: false });
-      resolveNext = null;
-    }
-    // Resolve any pending next() call
-    if (resolveNext) {
-      resolveNext({ value: errorEvent, done: false });
-      resolveNext = null;
-    }
+    pending.push({ type: "done" });
+    flushPending();
   };
 
-  xhr.onloadend = () => {
+  xhr.ontimeout = () => {
+    hasError = true;
     done = true;
-    // flush remaining
-    const remaining = xhr.responseText.slice(lastIndex);
-    if (remaining) {
-      buffer += remaining;
-      parseEvents();
-    }
-    if (resolveNext) {
-      resolveNext({ value: undefined as any, done: true });
-      resolveNext = null;
-    }
+    pending.push({ type: "done" });
+    flushPending();
   };
+
+  xhr.timeout = 30000;
+  xhr.send(JSON.stringify(request));
 
   return {
     [Symbol.asyncIterator](): AsyncIterator<ChatSSEEvent> {
       return {
         async next(): Promise<IteratorResult<ChatSSEEvent>> {
           if (pending.length > 0) {
-            return { value: pending.shift()!, done: false };
+            const event = pending.shift()!;
+            return { value: event, done: false };
           }
           if (done) {
             return { value: undefined as any, done: true };
