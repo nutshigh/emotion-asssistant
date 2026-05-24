@@ -1,6 +1,12 @@
+import { Platform } from "react-native";
 import type { ChatRequest, ChatSSEEvent, SummarizeRequest, SummarizeResponse } from "../types";
 
-const BASE_URL = "http://10.0.2.2:3000/api"; // Android emulator → host localhost
+const DEV_URL = Platform.select({
+  android: "http://10.0.2.2:3000/api",
+  default: "http://localhost:3000/api",
+});
+
+const BASE_URL = __DEV__ ? DEV_URL : "https://your-production-server.com/api";
 
 export async function* streamChat(request: ChatRequest): AsyncGenerator<ChatSSEEvent> {
   const response = await fetch(`${BASE_URL}/chat`, {
