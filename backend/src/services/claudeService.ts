@@ -7,12 +7,14 @@ const anthropic = new Anthropic({
   baseURL: process.env.ANTHROPIC_BASE_URL || undefined,
 });
 
+const API_KEY = process.env.ANTHROPIC_API_KEY;
+const BASE_URL = process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com";
 const MODEL = process.env.MODEL || "claude-sonnet-4-6";
 
 export async function* streamChat(request: ChatRequest): AsyncGenerator<string> {
   const systemPrompt = buildSystemPrompt(request.profile, request.conversation_summary);
 
-  const messages: Anthropic.MessageParam[] = [
+  const messages = [
     ...request.recent_messages.map((m: Message) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
@@ -20,18 +22,66 @@ export async function* streamChat(request: ChatRequest): AsyncGenerator<string> 
     { role: "user" as const, content: request.message },
   ];
 
-  const stream = anthropic.messages.stream({
-    model: MODEL,
-    max_tokens: 4000,
-    temperature: 0.7,
-    system: systemPrompt,
-    messages,
+  // Use raw fetch to DeepSeek's SSE endpoint instead of Anthropic SDK streaming
+  // This avoids SDK parsing issues with DeepSeek's response format
+  const res = await fetch(`${BASE_URL}/v1/messages`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY || "",
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: 4000,
+      temperature: 0.7,
+      stream: true,
+      system: systemPrompt,
+      messages,
+    }),
   });
 
-  for await (const event of stream) {
-    if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
-      yield event.delta.text;
+  if (!res.ok) {
+    const errText = await res.text().catch(() => "");
+    throw new Error(`API error ${res.status}: ${errText}`);
+  }
+
+  const reader = res.body?.getReader();
+  if (!reader) throw new Error("No response stream");
+
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed.startsWith("data: ")) continue;
+
+      try {
+        const event = JSON.parse(trimmed.slice(6));
+        // Anthropic streaming format: event.delta.text contains the token
+        if (event.type === "content_block_delta" && event.delta?.type === "text_delta") {
+          yield event.delta.text;
+        }
+      } catch { /* skip unparseable */ }
     }
+  }
+
+  // Flush remaining buffer
+  if (buffer.trim().startsWith("data: ")) {
+    try {
+      const event = JSON.parse(buffer.trim().slice(6));
+      if (event.type === "content_block_delta" && event.delta?.type === "text_delta") {
+        yield event.delta.text;
+      }
+    } catch { /* skip */ }
   }
 }
 
@@ -40,6 +90,7 @@ export async function summarizeConversation(request: SummarizeRequest): Promise<
     .map((m: Message) => `${m.role === "user" ? "用户" : "助手"}: ${m.content}`)
     .join("\n");
 
+  // Use Anthropic SDK for non-streaming (works fine)
   const msg = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 1000,
