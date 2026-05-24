@@ -8,7 +8,8 @@
     "android": "expo start --android",
     "build:apk": "eas build -p android --profile preview",
     "test": "jest",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "jest": { "preset": "jest-expo" }
   },
   "dependencies": {
     "expo": "~52.0.0",
