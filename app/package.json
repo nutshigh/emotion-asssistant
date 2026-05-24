@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~4.0.1",
-    "@react-navigation/bottom-tabs": "^7.0.0",
-    "@react-navigation/native": "^7.0.0",
+    "@react-navigation/bottom-tabs": "^6.6.1",
+    "@react-navigation/native": "^6.1.18",
     "expo": "~52.0.0",
     "expo-file-system": "~18.0.0",
     "expo-sharing": "~13.0.0",
