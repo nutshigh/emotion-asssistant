@@ -36,7 +36,7 @@ export async function* streamChat(request: ChatRequest): AsyncGenerator<string> 
     },
     body: JSON.stringify({
       model: MODEL,
-      max_tokens: 4000,
+      max_tokens: 384000,
       temperature: 0.7,
       stream: true,
       system: systemPrompt,
