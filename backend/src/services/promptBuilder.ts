@@ -1,5 +1,5 @@
 // backend/src/services/promptBuilder.ts
-import type { UserProfile } from "../../../shared/types";
+import type { UserProfile } from "../types";
 
 export function buildSystemPrompt(profile: UserProfile, conversationSummary: string): string {
   const parts: string[] = [];
@@ -28,7 +28,7 @@ export function buildSystemPrompt(profile: UserProfile, conversationSummary: str
   if (emo.best_response_style) profileLines.push(`最佳回应方式：${emo.best_response_style}`);
 
   if (profile.interests_topics.length > 0) {
-    profileLines.push(`兴趣话题：${profile.interests_topics.map((t) => t.topic).join("、")}`);
+    profileLines.push(`兴趣话题：${profile.interests_topics.map((t: { topic: string }) => t.topic).join("、")}`);
   }
 
   const rel = profile.relationship;

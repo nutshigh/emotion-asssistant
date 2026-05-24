@@ -1,8 +1,8 @@
 // backend/src/services/__tests__/promptBuilder.test.ts
 import { describe, it, expect } from "vitest";
 import { buildSystemPrompt } from "../promptBuilder";
-import { DEFAULT_PROFILE } from "../../../../shared/types";
-import type { UserProfile } from "../../../../shared/types";
+import { DEFAULT_PROFILE } from "../../types";
+import type { UserProfile } from "../../types";
 
 describe("buildSystemPrompt", () => {
   it("includes the base personality definition", () => {

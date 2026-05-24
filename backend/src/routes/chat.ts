@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { streamChat, summarizeConversation } from "../services/claudeService";
-import type { ChatRequest, ChatSSEEvent, SummarizeRequest } from "../../../shared/types";
+import type { ChatRequest, ChatSSEEvent, SummarizeRequest } from "../types";
 
 const router = Router();
 

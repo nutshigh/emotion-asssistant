@@ -12,7 +12,7 @@ vi.mock("@anthropic-ai/sdk", () => ({
 }));
 
 import { streamChat, summarizeConversation } from "../claudeService";
-import type { ChatRequest, SummarizeRequest } from "../../../../shared/types";
+import type { ChatRequest, SummarizeRequest } from "../../types";
 
 describe("streamChat", () => {
   it("returns an async iterable for SSE streaming", () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { mergeProfileUpdates } from "../profileAnalyzer";
-import { DEFAULT_PROFILE } from "../../../../shared/types";
-import type { UserProfile } from "../../../../shared/types";
+import { DEFAULT_PROFILE } from "../../types";
+import type { UserProfile } from "../../types";
 
 describe("mergeProfileUpdates", () => {
   it("merges new interests without duplicates", () => {

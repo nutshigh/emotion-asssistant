@@ -1,14 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "./promptBuilder";
-import type { ChatRequest, SummarizeRequest, SummarizeResponse } from "../../../shared/types";
+import type { ChatRequest, Message, SummarizeRequest, SummarizeResponse } from "../types";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  baseURL: process.env.ANTHROPIC_BASE_URL || undefined,
+});
+
+const MODEL = process.env.MODEL || "claude-sonnet-4-6";
 
 export async function* streamChat(request: ChatRequest): AsyncGenerator<string> {
   const systemPrompt = buildSystemPrompt(request.profile, request.conversation_summary);
 
   const messages: Anthropic.MessageParam[] = [
-    ...request.recent_messages.map((m) => ({
+    ...request.recent_messages.map((m: Message) => ({
       role: m.role as "user" | "assistant",
       content: m.content,
     })),
@@ -16,7 +21,7 @@ export async function* streamChat(request: ChatRequest): AsyncGenerator<string> 
   ];
 
   const stream = anthropic.messages.stream({
-    model: "claude-sonnet-4-6",
+    model: MODEL,
     max_tokens: 4000,
     system: systemPrompt,
     messages,
@@ -31,11 +36,11 @@ export async function* streamChat(request: ChatRequest): AsyncGenerator<string> 
 
 export async function summarizeConversation(request: SummarizeRequest): Promise<SummarizeResponse> {
   const conversationText = request.messages
-    .map((m) => `${m.role === "user" ? "用户" : "助手"}: ${m.content}`)
+    .map((m: Message) => `${m.role === "user" ? "用户" : "助手"}: ${m.content}`)
     .join("\n");
 
   const msg = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
+    model: MODEL,
     max_tokens: 1000,
     system: "你是一个用户画像分析器。根据对话内容，提取用户的新信息并更新画像。只返回 JSON，不要其他文字。",
     messages: [{
