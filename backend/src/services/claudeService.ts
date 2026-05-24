@@ -1,0 +1,53 @@
+import Anthropic from "@anthropic-ai/sdk";
+import { buildSystemPrompt } from "./promptBuilder";
+import type { ChatRequest, SummarizeRequest, SummarizeResponse } from "../../../shared/types";
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+export async function* streamChat(request: ChatRequest): AsyncGenerator<string> {
+  const systemPrompt = buildSystemPrompt(request.profile, request.conversation_summary);
+
+  const messages: Anthropic.MessageParam[] = [
+    ...request.recent_messages.map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    })),
+    { role: "user" as const, content: request.message },
+  ];
+
+  const stream = anthropic.messages.stream({
+    model: "claude-sonnet-4-6",
+    max_tokens: 4000,
+    system: systemPrompt,
+    messages,
+  });
+
+  for await (const event of stream) {
+    if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+      yield event.delta.text;
+    }
+  }
+}
+
+export async function summarizeConversation(request: SummarizeRequest): Promise<SummarizeResponse> {
+  const conversationText = request.messages
+    .map((m) => `${m.role === "user" ? "用户" : "助手"}: ${m.content}`)
+    .join("\n");
+
+  const msg = await anthropic.messages.create({
+    model: "claude-sonnet-4-6",
+    max_tokens: 1000,
+    system: "你是一个用户画像分析器。根据对话内容，提取用户的新信息并更新画像。只返回 JSON，不要其他文字。",
+    messages: [{
+      role: "user",
+      content: `分析以下对话，返回 JSON：\n{ "conversation_summary": "一句话摘要", "profile_updates": { 需要更新的画像字段 }, "new_facts": ["新发现的事实"] }\n\n当前画像：${JSON.stringify(request.profile)}\n\n对话：\n${conversationText}`,
+    }],
+  });
+
+  const text = (msg.content[0] as { text: string }).text;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { conversation_summary: text.slice(0, 200), profile_updates: {}, new_facts: [] };
+  }
+}
