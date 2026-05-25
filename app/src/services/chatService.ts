@@ -92,7 +92,7 @@ export async function triggerSummarize(): Promise<void> {
   const store = useChatStore.getState();
   const profileStore = useProfileStore.getState();
 
-  if (store.messages.length < 10) return;
+  if (store.messages.length < 5) return;
 
   try {
     const result = await summarizeConversation({
