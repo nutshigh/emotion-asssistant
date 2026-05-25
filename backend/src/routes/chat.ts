@@ -20,12 +20,20 @@ router.post("/chat", async (req: Request, res: Response) => {
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
+  // Disable Nagle's algorithm to prevent TCP from batching small packets
+  const socket = (res as any).socket;
+  if (socket) socket.setNoDelay(true);
+
   let tokenCount = 0;
   try {
     for await (const token of streamChat({ message, profile, conversation_summary, recent_messages })) {
       tokenCount++;
       const event: ChatSSEEvent = { type: "token", content: token };
       res.write(`data: ${JSON.stringify(event)}\n\n`);
+      // Small delay every 2 tokens to prevent client buffer overflow
+      if (tokenCount % 2 === 0) {
+        await new Promise((r) => setTimeout(r, 20));
+      }
       // Diagnostic: log every token sent to client
       const ts = new Date().toISOString();
       const line = `[${ts}] [chat.ts] SEND token #${tokenCount}: "${token}"\n`;
