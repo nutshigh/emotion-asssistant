@@ -78,6 +78,19 @@ router.get("/debug/logs", (_req: Request, res: Response) => {
   }
 });
 
+// Debug endpoint: client reports what it received for comparison
+router.post("/debug/client-log", (req: Request, res: Response) => {
+  try {
+    const { tokenCount, fullReply } = req.body;
+    const ts = new Date().toISOString();
+    const line = `[${ts}] [CLIENT REPORT] Tokens received: ${tokenCount}, fullReply (${fullReply?.length || 0} chars): "${fullReply}"\n`;
+    fs.appendFileSync(LOG_FILE, line);
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Clear logs
 router.delete("/debug/logs", (_req: Request, res: Response) => {
   try {

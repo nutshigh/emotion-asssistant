@@ -8,7 +8,7 @@ import {
   touchSession,
 } from "../db/chatRepository";
 import { saveProfile } from "../db/profileRepository";
-import { streamChat as apiStreamChat, summarizeConversation } from "../api/client";
+import { streamChat as apiStreamChat, summarizeConversation, BASE_URL } from "../api/client";
 import { mergeProfileUpdates } from "./profileService";
 import type { Message } from "../types";
 
@@ -61,11 +61,16 @@ export async function sendMessage(content: string): Promise<void> {
         clientTokenCount++;
         fullReply += event.content;
         store.appendToReply(event.content);
-        // Diagnostic: log every token received on client
-        console.log(`[client] RECV token #${clientTokenCount}: "${event.content}" (len=${event.content.length})`);
       }
     }
-    console.log(`[client] Stream done. Total tokens: ${clientTokenCount}, fullReply (${fullReply.length} chars): "${fullReply}"`);
+    // Report client-side received data to server for comparison
+    try {
+      await fetch(`${BASE_URL}/debug/client-log`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tokenCount: clientTokenCount, fullReply }),
+      });
+    } catch { /* debug log failure shouldn't affect chat */ }
 
     const assistantMsg: Message = {
       id: `a_${Date.now()}`,
