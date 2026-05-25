@@ -47,13 +47,15 @@ export async function* streamChat(request: ChatRequest): AsyncGenerator<ChatSSEE
         }
       }
       if (xhr.readyState === 4) {
-        // Flush remaining buffer — last line(s) might still be incomplete
-        if (buffer.trim()) {
-          const line = buffer.trim();
+        // Flush ALL remaining buffer content — process every complete line
+        if (buffer) {
+          const remaining = buffer.split("\n");
           buffer = "";
-          if (line.startsWith("data: ")) {
+          for (const line of remaining) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data: ")) continue;
             try {
-              const event = JSON.parse(line.slice(6)) as ChatSSEEvent;
+              const event = JSON.parse(trimmed.slice(6)) as ChatSSEEvent;
               if (resolveNext) {
                 resolveNext({ value: event, done: false });
                 resolveNext = null;
