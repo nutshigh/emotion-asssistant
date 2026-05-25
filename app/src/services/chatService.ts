@@ -55,12 +55,17 @@ export async function sendMessage(content: string): Promise<void> {
     });
 
     let fullReply = "";
+    let clientTokenCount = 0;
     for await (const event of stream) {
       if (event.type === "token" && event.content) {
+        clientTokenCount++;
         fullReply += event.content;
         store.appendToReply(event.content);
+        // Diagnostic: log every token received on client
+        console.log(`[client] RECV token #${clientTokenCount}: "${event.content}" (len=${event.content.length})`);
       }
     }
+    console.log(`[client] Stream done. Total tokens: ${clientTokenCount}, fullReply (${fullReply.length} chars): "${fullReply}"`);
 
     const assistantMsg: Message = {
       id: `a_${Date.now()}`,

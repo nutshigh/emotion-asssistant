@@ -26,9 +26,17 @@ router.post("/chat", async (req: Request, res: Response) => {
       tokenCount++;
       const event: ChatSSEEvent = { type: "token", content: token };
       res.write(`data: ${JSON.stringify(event)}\n\n`);
+      // Diagnostic: log every token sent to client
+      const ts = new Date().toISOString();
+      const line = `[${ts}] [chat.ts] SEND token #${tokenCount}: "${token}"\n`;
+      try { fs.appendFileSync(LOG_FILE, line); } catch {}
     }
     const doneEvent: ChatSSEEvent = { type: "done", message_id: `msg_${Date.now()}` };
     res.write(`data: ${JSON.stringify(doneEvent)}\n\n`);
+    // Log total tokens sent
+    const ts2 = new Date().toISOString();
+    const summary = `[${ts2}] [chat.ts] Total tokens sent: ${tokenCount}\n`;
+    try { fs.appendFileSync(LOG_FILE, summary); } catch {}
     res.end();
   } catch (err) {
     console.error("[Chat Error]", err);
