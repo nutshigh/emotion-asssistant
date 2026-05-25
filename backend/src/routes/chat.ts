@@ -25,25 +25,33 @@ router.post("/chat", async (req: Request, res: Response) => {
   if (socket) socket.setNoDelay(true);
 
   let tokenCount = 0;
+  let batch = "";
   try {
     for await (const token of streamChat({ message, profile, conversation_summary, recent_messages })) {
       tokenCount++;
-      const event: ChatSSEEvent = { type: "token", content: token };
-      res.write(`data: ${JSON.stringify(event)}\n\n`);
-      // Small delay every 2 tokens to prevent client buffer overflow
-      if (tokenCount % 2 === 0) {
-        await new Promise((r) => setTimeout(r, 20));
+      batch += token;
+      // Send in batches of ~10 tokens or every 150ms
+      if (tokenCount % 10 === 0) {
+        const event: ChatSSEEvent = { type: "token", content: batch };
+        res.write(`data: ${JSON.stringify(event)}\n\n`);
+        batch = "";
+        await new Promise((r) => setTimeout(r, 80));
       }
-      // Diagnostic: log every token sent to client
+      // Diagnostic: log every token
       const ts = new Date().toISOString();
       const line = `[${ts}] [chat.ts] SEND token #${tokenCount}: "${token}"\n`;
       try { fs.appendFileSync(LOG_FILE, line); } catch {}
+    }
+    // Flush remaining batch
+    if (batch) {
+      const event: ChatSSEEvent = { type: "token", content: batch };
+      res.write(`data: ${JSON.stringify(event)}\n\n`);
     }
     const doneEvent: ChatSSEEvent = { type: "done", message_id: `msg_${Date.now()}` };
     res.write(`data: ${JSON.stringify(doneEvent)}\n\n`);
     // Log total tokens sent
     const ts2 = new Date().toISOString();
-    const summary = `[${ts2}] [chat.ts] Total tokens sent: ${tokenCount}\n`;
+    const summary = `[${ts2}] [chat.ts] Total tokens sent: ${tokenCount}, in batches\n`;
     try { fs.appendFileSync(LOG_FILE, summary); } catch {}
     res.end();
   } catch (err) {
