@@ -1,8 +1,11 @@
 import { Router, type Request, type Response } from "express";
+import * as fs from "fs";
+import * as path from "path";
 import { streamChat, summarizeConversation } from "../services/claudeService";
 import type { ChatRequest, ChatSSEEvent, SummarizeRequest } from "../types";
 
 const router = Router();
+const LOG_FILE = path.join(__dirname, "..", "..", "llm-debug.log");
 
 router.post("/chat", async (req: Request, res: Response) => {
   const { message, profile, conversation_summary, recent_messages } = req.body as ChatRequest;
@@ -17,8 +20,10 @@ router.post("/chat", async (req: Request, res: Response) => {
   res.setHeader("Connection", "keep-alive");
   res.flushHeaders();
 
+  let tokenCount = 0;
   try {
     for await (const token of streamChat({ message, profile, conversation_summary, recent_messages })) {
+      tokenCount++;
       const event: ChatSSEEvent = { type: "token", content: token };
       res.write(`data: ${JSON.stringify(event)}\n\n`);
     }
@@ -46,6 +51,32 @@ router.post("/chat/summarize", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("[Summarize Error]", err);
     res.status(500).json({ error: "分析失败" });
+  }
+});
+
+// Debug endpoint: view last N lines of LLM logs
+router.get("/debug/logs", (_req: Request, res: Response) => {
+  try {
+    if (!fs.existsSync(LOG_FILE)) {
+      res.json({ error: "No logs yet" });
+      return;
+    }
+    const content = fs.readFileSync(LOG_FILE, "utf-8");
+    const lines = content.split("\n").filter(Boolean);
+    const last = lines.slice(-200);
+    res.type("text/plain").send(last.join("\n"));
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Clear logs
+router.delete("/debug/logs", (_req: Request, res: Response) => {
+  try {
+    fs.writeFileSync(LOG_FILE, "");
+    res.json({ ok: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
   }
 });
 
